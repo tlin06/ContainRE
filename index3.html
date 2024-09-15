@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List of Checked-out Containers</title>
+    <style>
+      body { font-family: Arial, sans-serif; text-align: center; }
+        .table-container {
+            max-height: 550px;
+            overflow-y: auto;
+            margin: 0 auto;
+            width: 80%;
+        }
+        table { 
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+        }
+        th { 
+            background-color: #f2f2f2; 
+            position: sticky;
+            top: 0;
+        }
+        .old-data { background-color: #ffcccc; }
+    </style>
+  </head>
+  <body>
+    <h1>List of Checked-out Containers</h1>
+    <div class="table-container">
+      <table id="signalTable">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Kerberos</th>
+            <th>Checkout Station</th>
+            <th>Container ID</th>
+          </tr>
+        </thead>
+        <tbody id="signalTableBody">
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const tableBody = document.getElementById('signalTableBody');
+        async function updateTable() {
+            let signalData = [];
+            await fetch('/data')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('signalTableBody');
+                    tableBody.innerHTML = '';
+                    data.forEach(entry => {
+                        const row = tableBody.insertRow(0);
+                        const timestampCell = row.insertCell(0);
+                        const kerberosCell = row.insertCell(1);
+                        const stationCell = row.insertCell(2);
+                        const idCell = row.insertCell(3);
+                        
+                        const date = new Date(entry.timestring);
+                        signalData.push({timestamp: entry.timestamp, kerberos: entry.kerberos, station: entry.station, id: entry.id});
+
+                        timestampCell.textContent = date.toLocaleTimeString();
+                        kerberosCell.textContent = entry.kerberos;
+                        stationCell.textContent = entry.station;
+                        idCell.textContent = entry.id
+                    });
+                });
+
+            const rows = tableBody.getElementsByTagName('tr');
+            const now = Date.now()
+            for (let i = 0; i < rows.length; i++) {
+                const rowTime = signalData[signalData.length - 1 - i].timestamp;
+                if (Math.abs(now - rowTime) > 10000) {
+                    rows[i].classList.add('old-data');
+                } 
+                else {
+                    rows[i].classList.remove('old-data');
+                }
+            }
+        }
+
+        // Update every second
+        setInterval(updateTable, 1000);
+    </script>
+  </body>
+</html>
